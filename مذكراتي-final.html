@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>مذكراتي</title>
+<meta name="theme-color" content="#202124">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="مذكراتي">
+<link id="pwa-manifest" rel="manifest">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#202124;--surface:#2d2e30;--border:#5f6368;
+  --text:#e8eaed;--muted:#9aa0a6;--dim:#3c4043;
+  --yellow:#fdd663;--blue:#8ab4f8;--green:#81c995;--red:#f28b82;
+}
+body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);min-height:100dvh;overflow-x:hidden}
+
+/* ── SETUP ── */
+#setup{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100dvh;padding:24px}
+.setup-box{background:#2d2e30;border:1px solid #3c4043;border-radius:16px;padding:32px 24px;width:100%;max-width:400px;text-align:center}
+.setup-logo{font-size:52px;margin-bottom:12px}
+.setup-title{font-size:22px;font-weight:700;color:var(--yellow);margin-bottom:6px}
+.setup-sub{font-size:13px;color:var(--muted);margin-bottom:28px;line-height:1.7}
+.setup-label{font-size:13px;color:var(--muted);margin-bottom:8px;display:block;text-align:right}
+.setup-input{width:100%;background:#1a1a1c;border:1px solid var(--dim);border-radius:10px;padding:12px 16px;color:var(--text);font-size:15px;font-family:'Cairo',sans-serif;outline:none;direction:ltr;transition:border-color .2s;letter-spacing:.05em}
+.setup-input:focus{border-color:var(--yellow)}
+.setup-btn{width:100%;padding:14px;background:var(--yellow);border:none;border-radius:10px;color:#202124;font-size:16px;font-weight:700;font-family:'Cairo',sans-serif;cursor:pointer;margin-top:16px;transition:opacity .2s}
+.setup-btn:active{opacity:.85}
+.setup-err{color:var(--red);font-size:13px;margin-top:10px;min-height:18px}
+.setup-hint{margin-top:20px;font-size:12px;color:#5f6368;line-height:1.8}
+
+/* ── TOPBAR ── */
+#topbar{position:sticky;top:0;z-index:100;background:var(--bg);padding:10px 12px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #3c4043}
+#search-box{flex:1;background:#3c4043;border:none;border-radius:24px;padding:10px 16px;color:var(--text);font-size:15px;font-family:'Cairo',sans-serif;outline:none;direction:rtl}
+#search-box::placeholder{color:var(--muted)}
+.icon-btn{background:none;border:none;color:var(--muted);cursor:pointer;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:background .15s;flex-shrink:0}
+.icon-btn:active{background:#3c4043}
+.icon-btn svg{width:22px;height:22px}
+
+/* ── SYNC BAR ── */
+#sync-bar{background:#1a1a1c;padding:6px 16px;font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px;border-bottom:1px solid #2a2a2c}
+#sync-dot{width:8px;height:8px;border-radius:50%;background:#5f6368;flex-shrink:0;transition:background .3s}
+#sync-dot.ok{background:var(--green)}
+#sync-dot.err{background:var(--red)}
+#sync-dot.pulse{animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ── MAIN ── */
+#main{padding:12px;padding-bottom:100px}
+#grid{columns:2;column-gap:10px}
+#grid.single{columns:1}
+.section-label{font-size:11px;letter-spacing:.08em;color:var(--muted);padding:8px 4px 6px;text-transform:uppercase;column-span:all;break-inside:avoid}
+
+/* ── CARD ── */
+.card{break-inside:avoid;border-radius:10px;border:1px solid #5f6368;margin-bottom:10px;cursor:pointer;overflow:hidden;position:relative;background:var(--surface);animation:fadeIn .2s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.card:active{transform:scale(.98)}
+.pin-icon{position:absolute;top:8px;left:10px;font-size:13px}
+.card-inner{padding:12px 14px 8px}
+.card-title{font-size:15px;font-weight:600;margin-bottom:5px;color:var(--text);word-break:break-word}
+.card-content{font-size:13px;color:#bdc1c6;line-height:1.7;word-break:break-word;max-height:180px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:9;-webkit-box-orient:vertical}
+.card-footer{display:flex;justify-content:flex-end;padding:4px 8px 6px;gap:2px}
+.card-footer .icon-btn{width:32px;height:32px}
+.card-footer .icon-btn svg{width:17px;height:17px}
+
+/* ── EMPTY ── */
+#empty{display:none;flex-direction:column;align-items:center;justify-content:center;padding:80px 24px;text-align:center;color:#5f6368}
+#empty svg{margin-bottom:20px;opacity:.4}
+#empty p{font-size:16px}
+#empty small{font-size:13px;margin-top:8px;display:block;color:#3c4043}
+
+/* ── FAB ── */
+#fab{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:200;background:#41331a;border:1px solid #8b6914;border-radius:16px;padding:14px 24px;color:var(--yellow);font-size:15px;font-family:'Cairo',sans-serif;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px;box-shadow:0 4px 20px rgba(0,0,0,.5);white-space:nowrap}
+#fab:active{transform:translateX(-50%) scale(.96)}
+#fab svg{width:20px;height:20px}
+
+/* ── OVERLAY / EDITOR ── */
+#overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:300;align-items:flex-end;justify-content:center}
+#overlay.open{display:flex}
+#editor{background:var(--surface);width:100%;max-width:600px;max-height:92dvh;border-radius:20px 20px 0 0;display:flex;flex-direction:column;overflow:hidden;animation:slideUp .22s ease}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+#editor-bar{height:6px;border-radius:20px 20px 0 0}
+#editor-top{display:flex;align-items:center;padding:6px 8px 0;gap:4px}
+#ed-title{flex:1;background:transparent;border:none;outline:none;color:var(--text);font-size:17px;font-weight:700;font-family:'Cairo',sans-serif;padding:8px;direction:rtl}
+#ed-title::placeholder{color:#5f6368}
+#ed-content{flex:1;background:transparent;border:none;outline:none;resize:none;color:#bdc1c6;font-size:15px;font-family:'Cairo',sans-serif;line-height:1.8;padding:4px 16px 12px;direction:rtl;min-height:120px;max-height:48dvh;overflow-y:auto}
+#ed-content::placeholder{color:#5f6368}
+#color-picker-row{display:none;flex-wrap:wrap;gap:10px;padding:10px 16px;border-top:1px solid #3c4043;justify-content:center}
+#color-picker-row.open{display:flex}
+.swatch{width:34px;height:34px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:transform .15s}
+.swatch:active{transform:scale(1.15)}
+.swatch.sel{border-color:#fff}
+#editor-bottom{border-top:1px solid #3c4043;display:flex;align-items:center;padding:6px 8px}
+#editor-bottom .icon-btn{width:38px;height:38px}
+#editor-bottom .icon-btn svg{width:20px;height:20px}
+#save-btn{margin-right:auto;background:none;border:none;color:var(--blue);font-size:15px;font-weight:700;font-family:'Cairo',sans-serif;cursor:pointer;padding:8px 12px;border-radius:8px}
+#save-btn:active{background:#3c4043}
+
+/* ── DRAWER ── */
+#drawer-overlay{display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.5)}
+#drawer-overlay.open{display:block}
+#drawer{position:fixed;top:0;right:-280px;width:280px;height:100dvh;background:#2d2e30;z-index:501;transition:right .25s ease;padding:48px 0 24px;display:flex;flex-direction:column}
+#drawer.open{right:0}
+.drawer-item{padding:14px 20px;font-size:15px;cursor:pointer;display:flex;align-items:center;gap:14px;color:var(--text);transition:background .15s}
+.drawer-item:active{background:#3c4043}
+.drawer-item svg{width:20px;height:20px;color:var(--muted);flex-shrink:0}
+.drawer-item.danger{color:var(--red)}
+.drawer-sep{height:1px;background:#3c4043;margin:8px 0}
+.drawer-label{padding:12px 20px 4px;font-size:11px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+.key-badge{background:#3c4043;border-radius:6px;padding:2px 10px;font-size:12px;color:var(--muted);direction:ltr;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ── SNACK ── */
+#snack{position:fixed;bottom:88px;left:50%;transform:translateX(-50%);background:#e8eaed;color:#202124;font-family:'Cairo',sans-serif;font-size:14px;padding:10px 20px;border-radius:8px;z-index:999;opacity:0;pointer-events:none;transition:opacity .2s;white-space:nowrap}
+#snack.show{opacity:1}
+</style>
+</head>
+<body>
+
+<!-- ══ SETUP SCREEN ══ -->
+<div id="setup">
+  <div class="setup-box">
+    <div class="setup-logo">📒</div>
+    <div class="setup-title">مذكراتي</div>
+    <div class="setup-sub">
+      أدخل مفتاح المزامنة — نفس المفتاح<br>
+      على الهاتف والحاسوب = نفس الملاحظات ☁️
+    </div>
+    <label class="setup-label">🔑 مفتاح المزامنة</label>
+    <input class="setup-input" id="sync-key-input" type="text" placeholder="اكتب كلمة سرية هنا" autocomplete="off" autofocus>
+    <button class="setup-btn" onclick="doSetup()">ابدأ ←</button>
+    <div class="setup-err" id="setup-err"></div>
+    <div class="setup-hint">⚠️ نفس المفتاح على كل أجهزتك = مزامنة تلقائية</div>
+  </div>
+</div>
+
+<!-- ══ MAIN APP ══ -->
+<div id="app" style="display:none">
+
+  <div id="topbar">
+    <button class="icon-btn" onclick="openDrawer()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+      </svg>
+    </button>
+    <input id="search-box" type="search" placeholder="🔍  ابحث في ملاحظاتك" oninput="renderGrid()">
+    <button class="icon-btn" onclick="toggleView()">
+      <svg id="view-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+        <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+      </svg>
+    </button>
+  </div>
+
+  <div id="sync-bar">
+    <div id="sync-dot" class="pulse"></div>
+    <span id="sync-txt">جاري الاتصال...</span>
+  </div>
+
+  <div id="main">
+    <div id="empty">
+      <svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <polyline points="14 2 14 8 20 8"/>
+      </svg>
+      <p>لا توجد ملاحظات</p>
+      <small>اضغط + لإضافة ملاحظة جديدة</small>
+    </div>
+    <div id="grid"></div>
+  </div>
+
+  <button id="fab" onclick="openEditor(null)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+    </svg>
+    ملاحظة جديدة
+  </button>
+
+  <!-- EDITOR -->
+  <div id="overlay" onclick="overlayBg(event)">
+    <div id="editor">
+      <div id="editor-bar"></div>
+      <div id="editor-top">
+        <input id="ed-title" type="text" placeholder="العنوان">
+        <button class="icon-btn" id="pin-btn" onclick="togglePin()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="pin-icon">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+          </svg>
+        </button>
+      </div>
+      <textarea id="ed-content" placeholder="أضف ملاحظة..."></textarea>
+      <div id="color-picker-row"></div>
+      <div id="editor-bottom">
+        <button class="icon-btn" onclick="toggleColorPicker()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
+            <line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/>
+          </svg>
+        </button>
+        <button class="icon-btn" id="del-btn" onclick="deleteActive()" style="display:none">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>
+            <path d="M10 11v6M14 11v6M9 6V4h6v2"/>
+          </svg>
+        </button>
+        <button id="save-btn" onclick="saveNote()">حفظ</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DRAWER -->
+  <div id="drawer-overlay" onclick="closeDrawer()"></div>
+  <div id="drawer">
+    <div class="drawer-label">📒 مذكراتي</div>
+    <div class="drawer-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+      </svg>
+      المفتاح: <span class="key-badge" id="key-badge">—</span>
+    </div>
+    <div class="drawer-sep"></div>
+    <div class="drawer-item" onclick="copyKey()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="9" y="9" width="13" height="13" rx="2"/>
+        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+      </svg>
+      نسخ المفتاح
+    </div>
+    <div class="drawer-item danger" onclick="doLogout()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+        <polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+      </svg>
+      تغيير المفتاح / الخروج
+    </div>
+  </div>
+</div>
+
+<div id="snack"></div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+<script>
+// ══ FIREBASE CONFIG (جاهز) ══
+const FB_CONFIG = {
+  apiKey: "AIzaSyAGVjkNOQWWq3iG6zACg8xT4UgfFCSfNRE",
+  authDomain: "new-project-n-b93df.firebaseapp.com",
+  databaseURL: "https://new-project-n-b93df-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "new-project-n-b93df",
+  storageBucket: "new-project-n-b93df.firebasestorage.app",
+  messagingSenderId: "502331384360",
+  appId: "1:502331384360:web:b9bb6a07d7c10b31748b1d"
+};
+
+// ══ PWA MANIFEST ══
+(function(){
+  const m={name:'مذكراتي',short_name:'مذكراتي',start_url:'.',display:'standalone',
+    background_color:'#202124',theme_color:'#202124',
+    icons:[{src:"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23202124'/%3E%3Ctext y='.9em' font-size='80' x='8'%3E📒%3C/text%3E%3C/svg%3E",sizes:'192x192',type:'image/svg+xml'}]};
+  const b=new Blob([JSON.stringify(m)],{type:'application/json'});
+  document.getElementById('pwa-manifest').href=URL.createObjectURL(b);
+})();
+
+// ══ COLORS ══
+const COLORS=[
+  {k:'default',bg:'#2d2e30',bar:'#5f6368'},
+  {k:'red',    bg:'#5c2b29',bar:'#f28b82'},
+  {k:'orange', bg:'#614a19',bar:'#fbbc04'},
+  {k:'yellow', bg:'#635d19',bar:'#fff475'},
+  {k:'green',  bg:'#345920',bar:'#ccff90'},
+  {k:'teal',   bg:'#16504b',bar:'#a8f0e8'},
+  {k:'blue',   bg:'#2d555e',bar:'#cbf0f8'},
+  {k:'navy',   bg:'#1e3a5f',bar:'#aecbfa'},
+  {k:'purple', bg:'#42275e',bar:'#d7aefb'},
+  {k:'pink',   bg:'#5b2245',bar:'#fdcfe8'},
+  {k:'brown',  bg:'#442f19',bar:'#e6c9a8'},
+];
+
+// Build color swatches
+const cpRow=document.getElementById('color-picker-row');
+COLORS.forEach(c=>{
+  const s=document.createElement('div');
+  s.className='swatch'+(c.k==='default'?' sel':'');
+  s.style.background=c.bar;s.dataset.k=c.k;
+  s.onclick=()=>pickColor(c);
+  cpRow.appendChild(s);
+});
+
+// ══ STATE ══
+let db,notesRef,notes={},editId=null,curColor=COLORS[0],isPinned=false,singleCol=false;
+
+// ══ SETUP ══
+function doSetup(){
+  const key=document.getElementById('sync-key-input').value.trim();
+  const err=document.getElementById('setup-err');
+  if(!key){err.textContent='⚠️ أدخل مفتاح المزامنة';return;}
+  if(key.length<4){err.textContent='⚠️ المفتاح قصير جداً (4 أحرف على الأقل)';return;}
+  localStorage.setItem('sync_key',key);
+  initApp(key);
+}
+
+function initApp(key){
+  if(!firebase.apps.length) firebase.initializeApp(FB_CONFIG);
+  db=firebase.database();
+  notesRef=db.ref('notes/'+key);
+  document.getElementById('setup').style.display='none';
+  document.getElementById('app').style.display='block';
+  document.getElementById('key-badge').textContent=key;
+  setSyncStatus('pulse','جاري الاتصال...');
+  notesRef.on('value',snap=>{
+    notes=snap.val()||{};
+    setSyncStatus('ok','متصل • يتزامن تلقائياً ☁️');
+    renderGrid();
+  },()=>setSyncStatus('err','خطأ في الاتصال'));
+}
+
+// auto-login
+const savedKey=localStorage.getItem('sync_key');
+if(savedKey) initApp(savedKey);
+
+// ══ SYNC STATUS ══
+function setSyncStatus(type,txt){
+  const d=document.getElementById('sync-dot'),t=document.getElementById('sync-txt');
+  d.className=type;t.textContent=txt;
+}
+
+// ══ RENDER ══
+function renderGrid(){
+  const q=document.getElementById('search-box').value.trim().toLowerCase();
+  const grid=document.getElementById('grid'),empty=document.getElementById('empty');
+  grid.innerHTML='';
+  const arr=Object.values(notes).sort((a,b)=>b.updatedAt-a.updatedAt);
+  const filtered=arr.filter(n=>!q||n.title?.toLowerCase().includes(q)||n.content?.toLowerCase().includes(q));
+  const pins=filtered.filter(n=>n.pinned),rest=filtered.filter(n=>!n.pinned);
+  if(!filtered.length){empty.style.display='flex';return;}
+  empty.style.display='none';
+  if(pins.length){
+    addLabel('📌 مثبّتة');
+    pins.forEach(n=>grid.appendChild(makeCard(n)));
+  }
+  if(rest.length){
+    if(pins.length) addLabel('ملاحظاتي');
+    rest.forEach(n=>grid.appendChild(makeCard(n)));
+  }
+  function addLabel(t){const l=document.createElement('div');l.className='section-label';l.textContent=t;grid.appendChild(l);}
+}
+
+function makeCard(n){
+  const c=COLORS.find(c=>c.k===n.colorKey)||COLORS[0];
+  const card=document.createElement('div');
+  card.className='card';
+  card.style.cssText=`background:${c.bg};border-color:${n.colorKey==='default'?'#5f6368':c.bar+'55'}`;
+  card.innerHTML=
+    (n.pinned?'<div class="pin-icon">📌</div>':'')+
+    `<div class="card-inner">
+      ${n.title?`<div class="card-title">${esc(n.title)}</div>`:''}
+      ${n.content?`<div class="card-content">${esc(n.content)}</div>`:''}
+    </div>
+    <div class="card-footer">
+      <button class="icon-btn" onclick="togglePinCard(event,'${n.id}')">
+        <svg viewBox="0 0 24 24" fill="${n.pinned?'#fdd663':'none'}" stroke="#9aa0a6" stroke-width="2">
+          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+        </svg>
+      </button>
+      <button class="icon-btn" onclick="delCard(event,'${n.id}')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#9aa0a6" stroke-width="2">
+          <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>
+        </svg>
+      </button>
+    </div>`;
+  card.addEventListener('click',()=>openEditor(n.id));
+  return card;
+}
+
+function esc(t){return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}
+
+// ══ EDITOR ══
+function openEditor(id){
+  editId=id;
+  const n=id?notes[id]:null;
+  curColor=n?COLORS.find(c=>c.k===n.colorKey)||COLORS[0]:COLORS[0];
+  isPinned=n?.pinned||false;
+  document.getElementById('ed-title').value=n?.title||'';
+  document.getElementById('ed-content').value=n?.content||'';
+  applyEditorColor(curColor);
+  document.getElementById('del-btn').style.display=id?'flex':'none';
+  document.getElementById('pin-icon').setAttribute('fill',isPinned?'#fdd663':'none');
+  cpRow.classList.remove('open');
+  document.getElementById('overlay').classList.add('open');
+  setTimeout(()=>document.getElementById(n?'ed-content':'ed-title').focus(),120);
+}
+
+function overlayBg(e){if(e.target===document.getElementById('overlay'))saveNote();}
+
+function saveNote(){
+  const title=document.getElementById('ed-title').value.trim();
+  const content=document.getElementById('ed-content').value.trim();
+  if(!title&&!content){closeEditor();return;}
+  const now=Date.now();
+  if(editId&&notes[editId]){
+    notesRef.child(editId).update({title,content,colorKey:curColor.k,pinned:isPinned,updatedAt:now});
+  } else {
+    const id='n'+now;
+    notesRef.child(id).set({id,title,content,colorKey:curColor.k,pinned:isPinned,createdAt:now,updatedAt:now});
+    snack('✓ تمت الإضافة');
+  }
+  closeEditor();
+}
+
+function closeEditor(){
+  document.getElementById('overlay').classList.remove('open');
+  editId=null;isPinned=false;
+}
+
+function deleteActive(){
+  if(!editId)return;
+  notesRef.child(editId).remove();
+  closeEditor();snack('تم الحذف');
+}
+
+function togglePin(){
+  isPinned=!isPinned;
+  document.getElementById('pin-icon').setAttribute('fill',isPinned?'#fdd663':'none');
+}
+
+function pickColor(c){curColor=c;applyEditorColor(c);document.querySelectorAll('.swatch').forEach(s=>s.classList.toggle('sel',s.dataset.k===c.k));}
+function applyEditorColor(c){document.getElementById('editor-bar').style.background=c.bar;document.getElementById('editor').style.background=c.bg;}
+function toggleColorPicker(){cpRow.classList.toggle('open');}
+
+// ══ CARD ACTIONS ══
+function togglePinCard(e,id){e.stopPropagation();const n=notes[id];if(n)notesRef.child(id).update({pinned:!n.pinned,updatedAt:Date.now()});}
+function delCard(e,id){e.stopPropagation();notesRef.child(id).remove();snack('تم الحذف');}
+
+// ══ VIEW ══
+function toggleView(){
+  singleCol=!singleCol;
+  document.getElementById('grid').className=singleCol?'single':'';
+  document.getElementById('view-icon').innerHTML=singleCol
+    ?'<line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>'
+    :'<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>';
+}
+
+// ══ DRAWER ══
+function openDrawer(){document.getElementById('drawer').classList.add('open');document.getElementById('drawer-overlay').classList.add('open');}
+function closeDrawer(){document.getElementById('drawer').classList.remove('open');document.getElementById('drawer-overlay').classList.remove('open');}
+function copyKey(){const k=localStorage.getItem('sync_key')||'';navigator.clipboard?.writeText(k).then(()=>snack('✓ تم نسخ المفتاح!')).catch(()=>snack(k));}
+function doLogout(){localStorage.removeItem('sync_key');location.reload();}
+
+// ══ SNACK ══
+let snackT;
+function snack(msg){const s=document.getElementById('snack');s.textContent=msg;s.classList.add('show');clearTimeout(snackT);snackT=setTimeout(()=>s.classList.remove('show'),2300);}
+
+// ══ KEYBOARD ══
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape')saveNote();
+  if((e.ctrlKey||e.metaKey)&&e.key==='Enter')saveNote();
+});
+</script>
+</body>
+</html>
